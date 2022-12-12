@@ -12,38 +12,49 @@ for k=1:numel(files)
 end
 
 %for k=15:numel(im_or)
-for k=1:15
+for k=11:25
     im = im_or{k};
     
     gray1 = rgb2gray(im);
+
+    bi2 = imbinarize(gray1);
     
     ee = strel('disk', 1);
     closeim = imclose(gray1, ee);
 
     imwawa = edge(gray1, 'roberts');
-    imwawa = imfill(imwawa,"holes");
+    %imwawa = imfill(imwawa,"holes");
     
     res = imsubtract(closeim, gray1);
     
-    %treshold =
+    %treshold = ridncalv(im);
     bi = imbinarize(res);
-    bi2 = imfill(bi, "holes");
+    ee = strel('rectangle', [10,2]);
+    res = imclose(bi, ee);
+    ee = strel('rectangle', [2,10]);
+    res = imclose(res, ee);
+    ee = strel('line',10,45);
+    res = imclose(res, ee);
+    res = imclose(res, transpose(ee));
+    res = imfill(res, "holes");
+
+    res = imsubtract(res,bi);
+    res = imfill(res, "holes");
     
-    ee = strel('rectangle', [20,100]);
+    ee = strel('rectangle', [20,90]);
     rectangulos = imopen(bi2, ee);
     
     ee = strel('rectangle', [15,3]);
     palitos = imopen(bi2, ee);
     
     rec = imreconstruct(palitos,rectangulos);
-    rec = imreconstruct(bi2,rec);
+    rec = imreconstruct(res,(double(rec)));
     
     im2 = im;
     im2(:,:,3) = im2(:,:,3) .* uint8(~rec);
     im2(:,:,2) = im2(:,:,2) .* uint8(~rec);
     im2(:,:,1) = im2(:,:,1) + uint8(rec)*256;
-    im_res{k} = im2;
-    %im_res{k} = imwawa;
+    im_res{k} = rec;
 end
 
 %figure, imshow(im), title("Imatge Original");
@@ -58,7 +69,7 @@ end
 
 
 %for k=15:numel(im_or)
-for k=1:15
+for k=11:25
     figure, subplot(1,2,1), imshow(im_or{k}), title("Imatge original");
     subplot(1,2,2), imshow(im_res{k}), title("Matricula");
 end
