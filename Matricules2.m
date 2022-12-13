@@ -6,15 +6,16 @@ names = convertCharsToStrings(files);
 for k=1:numel(names)
     names(k) = erase(names(k),".jpg");
 end
-im_or=cell(1,numel(names));
+im_ors=cell(1,numel(names));
 for k=1:numel(files)
-  im_or{k}=imread(files{k});
+  im_ors{k}=imread(files{k});
 end
 
+% 41-46, 59
 %for k=15:numel(im_or)
-for k=1:numel(im_or)
+for k=1:numel(im_ors)
     % Imatge Original
-    imor = im_or{k};
+    imor = im_ors{k};
 
     % Passem a Blanc i negre i obtenim edges
     imgray = rgb2gray(imor);
@@ -23,6 +24,23 @@ for k=1:numel(im_or)
     imedges(200,:) = 0;
 
     % Seleccionem les zones tancades
+    ee = strel('rectangle',[5,10]);
+    immat = imdilate(imedges,ee);
+    immat = imfill(immat,"holes");
+    ee = strel('line',20,0);
+    immat = imerode(immat,ee);
+    ee = strel('line',10,90);
+    immat = imerode(immat,ee);
+
+    % Subdividim les zones massa grans
+    ee = strel('rectangle',[200,200]);
+    imgrans = imopen(immat,ee);
+    imgrans = imreconstruct(imgrans,immat);
+    imgransbordes = imdilate(imgrans,strel('disk',10));
+    imgransbordes = imgransbordes - imgrans;
+    imedges = logical(imedges - (imedges .* imgransbordes));
+
+    % Repetim selecció de zones tancades
     ee = strel('rectangle',[5,10]);
     immat = imdilate(imedges,ee);
     immat = imfill(immat,"holes");
@@ -58,17 +76,48 @@ for k=1:numel(im_or)
 
     immat = logical(immat .* imlines);
 
-    % Eliminem les zones massa grans
-    ee = strel('rectangle',[100,100]);
-    imgrans = imopen(immat,ee);
-    imgrans = imreconstruct(imgrans,immat);
-    immat = logical(immat .* (~imgrans));
+    % Eliminem els blobs en contacte amb els bordes
+    [n, m] = size(imbin);
+    imbordes = logical(zeros(n,m));
+    imbordes(1:3,:) = 1;
+    imbordes(n-2:n,:) = 1;
+    imbordes(:,1:3) = 1;
+    imbordes(:,m-2:m) = 1;
+    imtouching = imreconstruct(imbordes,immat);
+
+    immat = logical(immat - imtouching);
+
+    % Emmarcat de Carácters
+    Iprops=regionprops(immat,'BoundingBox','Area', 'Image');
+    count = numel(Iprops);
+    
+    figure, imshow(imor);
+    for i=1:count
+       boundingBox=Iprops(i).BoundingBox;
+       region = imcrop(imgray,boundingBox);
+       regbin = ~imbinarize(region, "adaptive");
+
+       figure, imshow(regbin);
+       
+       % Eliminem els elements molt grans
+       reggran = imopen(regbin,strel("rectangle",[9,9]));
+       reglletres =  logical(regbin - reggran);
+
+       % Eliminem els elements molt llargs
+       regllargs = imopen(reglletres,strel("line",50,0));
+       reglletres =  logical(reglletres - regllargs);
+
+    end 
+    
+    %figure,imshow(imbinarize(imgraymat));
 
     imres = imor;
     imres(:,:,3) = imres(:,:,3) .* uint8(~immat);
     imres(:,:,2) = imres(:,:,2) .* uint8(~immat);
     imres(:,:,1) = imres(:,:,1) + uint8(immat)*256;
 
-    figure, imshow(imres);
-
+    %figure, imshow(imfuse(imedges,immat));
+    %figure, imshow(imres);
+    %figure, imshow(imfuse(immat3,immat2));
+    
 end
