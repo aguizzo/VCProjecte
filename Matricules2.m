@@ -90,22 +90,33 @@ for k=1:numel(im_ors)
     % Emmarcat de Carácters
     Iprops=regionprops(immat,'BoundingBox','Area', 'Image');
     count = numel(Iprops);
-    
+
     figure, imshow(imor);
     for i=1:count
        boundingBox=Iprops(i).BoundingBox;
-       region = imcrop(imgray,boundingBox);
-       regbin = ~imbinarize(region, "adaptive");
-
-       figure, imshow(regbin);
+       region = imcrop(imgray,boundingBox+[-2,-2,+4,+4]);
+    
+       ridncalv = @ridncalv;
+       regbin = ~imbinarize(region,ridncalv(region));
        
-       % Eliminem els elements molt grans
-       reggran = imopen(regbin,strel("rectangle",[9,9]));
-       reglletres =  logical(regbin - reggran);
+       % Eliminem les regions amb < 4 regions connexes,
+       % després de filtrar estructures petites
+       ee = strel("rectangle",[7,1]);
+       regero = imerode(regbin,ee);
+       regrec2 = imreconstruct(regero,regbin);
 
-       % Eliminem els elements molt llargs
-       regllargs = imopen(reglletres,strel("line",50,0));
-       reglletres =  logical(reglletres - regllargs);
+       ee = strel("rectangle",[1,2]);
+       regero = imerode(regrec2,ee);
+       regrec2 = imreconstruct(regero,regrec2);
+
+       regrec2 = padarray(regrec2,[1,1],1);
+       cc = bwconncomp(regrec2);
+       
+       if cc.NumObjects > 5
+       
+        figure, imshow(regbin);
+
+       end
 
     end 
     
