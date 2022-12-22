@@ -1,6 +1,6 @@
 close all; clc
 
-f=dir(['cars' '/*.jpg']);
+f=dir(['*.jpg']);
 files={f.name};
 names = convertCharsToStrings(files);
 for k=1:numel(names)
@@ -92,6 +92,10 @@ for k=1:numel(im_ors)
     count = numel(Iprops);
 
     figure, imshow(imor);
+
+    MATRICULES = cell(1,200);
+    index = 1;
+
     for i=1:count
        boundingBox=Iprops(i).BoundingBox;
        region = imcrop(imgray,boundingBox+[-2,-2,+4,+4]);
@@ -109,26 +113,37 @@ for k=1:numel(im_ors)
        regero = imerode(regrec2,ee);
        regrec2 = imreconstruct(regero,regrec2);
 
+       regrec2 = imclose(regrec2,strel("rectangle",[2,1]));
+
        regrec2 = padarray(regrec2,[1,1],1);
        cc = bwconncomp(regrec2);
        
-       if cc.NumObjects > 5
-       
-        figure, imshow(regbin);
+       regSize = size(regrec2);
 
-       end
-
-    end 
-    
-    %figure,imshow(imbinarize(imgraymat));
-
-    imres = imor;
-    imres(:,:,3) = imres(:,:,3) .* uint8(~immat);
-    imres(:,:,2) = imres(:,:,2) .* uint8(~immat);
-    imres(:,:,1) = imres(:,:,1) + uint8(immat)*256;
-
-    %figure, imshow(imfuse(imedges,immat));
-    %figure, imshow(imres);
-    %figure, imshow(imfuse(immat3,immat2));
-    
+       if (cc.NumObjects > 5 && regSize(2) > 115)
+            %figure, imshow(regbin);
+            %matricula = double(regrec2);
+            matricula = double(regbin);
+            figure, imshow(matricula), title(['Matricula ', num2str(k)]);
+            matricula = padarray(matricula,[5 5],0,'both');
+            etiq = bwlabel(matricula);
+            objects = regionprops('table', etiq, 'BoundingBox');
+            rectangles = table2array(objects);
+            imRectangles = insertShape(matricula, 'Rectangle', table2array(objects), 'LineWidth', 1);
+            figure, imshow(imRectangles), title(['Matricula delimitda ', num2str(k)]);
+            nRectangles = size(rectangles);
+            for i = 2:nRectangles(1)
+                xmin = ceil(rectangles(i,1));
+                ymin = ceil(rectangles(i,2));
+                xmax =  rectangles(i,3) + xmin;
+                ymax = rectangles(i,4) + ymin;
+                area = (xmax-xmin) * (ymax - ymin);
+            
+                if (area > 80)
+                    Image=etiq((ymin-2):(ymax+2),(xmin-2):(xmax+2));
+                    figure,imshow(Image), title(['Regio ', num2str(i)]);
+                end
+            end
+        end
+    end   
 end
