@@ -11,14 +11,14 @@ for k=1:numel(files)
   im_ors{k}=imread(files{k});
 end
 
-% 41-46, 59
-%for k=15:numel(im_or)
 for k=1:numel(im_ors)
     % Imatge Original
     imor = im_ors{k};
 
-    % Passem a Blanc i negre i obtenim edges
+    % Passem a escala de grisos i eliminem els píxels amb molt de color
     imgray = rgb2gray(imor);
+
+    % Passem a Blanc i negre i obtenim edges
     imbin = imbinarize(imgray);
     imedges = edge(imgray, 'prewitt');
     imedges(200,:) = 0;
@@ -91,7 +91,7 @@ for k=1:numel(im_ors)
     Iprops=regionprops(immat,'BoundingBox','Area', 'Image');
     count = numel(Iprops);
 
-    figure, imshow(imor);
+    %figure, imshow(imor);
     for i=1:count
        boundingBox=Iprops(i).BoundingBox;
        region = imcrop(imgray,boundingBox+[-2,-2,+4,+4]);
@@ -99,7 +99,7 @@ for k=1:numel(im_ors)
        ridncalv = @ridncalv;
        regbin = ~imbinarize(region,ridncalv(region));
        
-       % Eliminem les regions amb < 4 regions connexes,
+       % Eliminem les regions amb < 6 regions connexes,
        % després de filtrar estructures petites
        ee = strel("rectangle",[7,1]);
        regero = imerode(regbin,ee);
@@ -109,13 +109,39 @@ for k=1:numel(im_ors)
        regero = imerode(regrec2,ee);
        regrec2 = imreconstruct(regero,regrec2);
 
+       regrec2 = imclose(regrec2,strel("rectangle",[2,1]));
+
        regrec2 = padarray(regrec2,[1,1],1);
        cc = bwconncomp(regrec2);
-       
-       if cc.NumObjects > 5
-       
-        figure, imshow(regbin);
 
+       % Eliminem les regions amb proporcions inadequades
+       [n, m] = size(regbin);
+       ratio = abs(n/m - 110/520)*100;
+       
+       if cc.NumObjects > 5 && ratio < 35
+
+           % Eliminem els elements molt grans
+           reggran = imopen(regbin,strel("rectangle",[9,9]));
+           reglletres =  logical(regbin - reggran);
+    
+           % Eliminem els elements molt llargs
+           reggran = imopen(reglletres,strel("rectangle",[1,30]));
+           reglletres =  logical(reglletres - reggran);
+
+           % Unim lletres separades
+           reglletres = imclose(reglletres,strel("rectangle",[2,1]));
+
+           % Eliminem els elements molt fins
+           reglletres = imopen(reglletres,strel("rectangle",[2,1]));
+
+           lletresProps=regionprops(reglletres,'BoundingBox','Area', 'Image','PixelList');
+           
+           for ii=1:numel(lletresProps)
+                if lletresProps(ii).Area < 10
+                    cum(lletresProps(ii).PixelList(1,:)) = 1;
+                end
+           end
+    
        end
 
     end 
@@ -126,9 +152,5 @@ for k=1:numel(im_ors)
     imres(:,:,3) = imres(:,:,3) .* uint8(~immat);
     imres(:,:,2) = imres(:,:,2) .* uint8(~immat);
     imres(:,:,1) = imres(:,:,1) + uint8(immat)*256;
-
-    %figure, imshow(imfuse(imedges,immat));
-    %figure, imshow(imres);
-    %figure, imshow(imfuse(immat3,immat2));
     
 end
