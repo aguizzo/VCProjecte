@@ -11,6 +11,18 @@ for k=1:numel(files)
   im_ors{k}=imread(files{k});
 end
 
+chars_or = imread("chars\Greek-License-Plate-Font-2004-2.jpg");
+chars = rgb2gray(chars_or);
+chars = imbinarize(chars);
+charsPoints=detectSIFTFeatures(chars, Sigma=1.0, EdgeThreshold=15.0, ContrastThreshold=0.0115);
+figure, imshow(chars)
+title('Characters');
+hold on;
+plot(selectStrongest(charsPoints, 200));
+
+[charsFeat, charsPoints] = extractHOGFeatures(chars, charsPoints);
+
+
 % 41-46, 59
 %for k=15:numel(im_or)
 for k=1:numel(im_ors)
@@ -132,16 +144,32 @@ for k=1:numel(im_ors)
             imRectangles = insertShape(matricula, 'Rectangle', table2array(objects), 'LineWidth', 1);
             figure, imshow(imRectangles), title(['Matricula delimitda ', num2str(k)]);
             nRectangles = size(rectangles);
-            for i = 2:nRectangles(1)
-                xmin = ceil(rectangles(i,1));
-                ymin = ceil(rectangles(i,2));
-                xmax =  rectangles(i,3) + xmin;
-                ymax = rectangles(i,4) + ymin;
+            for j = 2:nRectangles(1)
+                xmin = ceil(rectangles(j,1));
+                ymin = ceil(rectangles(j,2));
+                xmax =  rectangles(j,3) + xmin;
+                ymax = rectangles(j,4) + ymin;
                 area = (xmax-xmin) * (ymax - ymin);
             
                 if (area > 80)
-                    Image=etiq((ymin-2):(ymax+2),(xmin-2):(xmax+2));
-                    figure,imshow(Image), title(['Regio ', num2str(i)]);
+                    Image =etiq((ymin-2):(ymax+2),(xmin-2):(xmax+2));
+                    %figure,imshow(Image), title(['Regio ', num2str(j)]);
+                    Image = imbinarize(Image);
+                    Image = padarray(Image,[10 10],0,'both');
+                    platePoints=detectSIFTFeatures(Image, Sigma=0.8);
+                    figure, imshow(Image)
+                    title(['KP Regio ', num2str(j)]);
+                    hold on;
+                    plot(selectStrongest(platePoints, 100));
+                    [plateFeat, platePoints] = extractHOGFeatures(Image, platePoints);
+                    
+                    pairs = matchFeatures(plateFeat, charsFeat, 'MatchThreshold', 20, MaxRatio=0.75);
+                    m_kp_plate = platePoints(pairs(:,1), :);
+                    m_kp_char = charsPoints(pairs(:,2), :);
+                    
+                    figure;
+                    showMatchedFeatures(Image, chars, m_kp_plate, m_kp_char, 'montage');
+                    title('Aparellaments putatius');        
                 end
             end
         end
