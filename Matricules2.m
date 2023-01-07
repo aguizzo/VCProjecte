@@ -11,17 +11,7 @@ for k=1:numel(files)
   im_ors{k}=imread(files{k});
 end
 
-chars_or = imread("chars\Greek-License-Plate-Font-2004-2.jpg");
-chars = rgb2gray(chars_or);
-chars = imbinarize(chars);
-charsPoints=detectSIFTFeatures(chars, Sigma=1.0, EdgeThreshold=15.0, ContrastThreshold=0.0115);
-figure, imshow(chars)
-title('Characters');
-hold on;
-plot(selectStrongest(charsPoints, 200));
-
-[charsFeat, charsPoints] = extractHOGFeatures(chars, charsPoints);
-
+imgNumb = 1;
 
 % 41-46, 59
 %for k=15:numel(im_or)
@@ -31,6 +21,10 @@ for k=1:numel(im_ors)
 
     % Passem a Blanc i negre i obtenim edges
     imgray = rgb2gray(imor);
+    %imgray = medfilt2(imgray,[3 3]);
+    %ee = strel('disk', 20);
+    %op = imopen(imgray ,ee);
+    %imgray = imsubtract(imgray, op);
     imbin = imbinarize(imgray);
     imedges = edge(imgray, 'prewitt');
     imedges(200,:) = 0;
@@ -132,44 +126,43 @@ for k=1:numel(im_ors)
        
        regSize = size(regrec2);
 
-       if (cc.NumObjects > 5 && regSize(2) > 115)
+       if (cc.NumObjects > 5 && regSize(2) > 115 && regSize(1) < 275)
             %figure, imshow(regbin);
             %matricula = double(regrec2);
             matricula = double(regbin);
-            figure, imshow(matricula), title(['Matricula ', num2str(k)]);
+            %figure, imshow(matricula), title(['Matricula ', num2str(k)]);
             matricula = padarray(matricula,[5 5],0,'both');
             etiq = bwlabel(matricula);
             objects = regionprops('table', etiq, 'BoundingBox');
             rectangles = table2array(objects);
             imRectangles = insertShape(matricula, 'Rectangle', table2array(objects), 'LineWidth', 1);
-            figure, imshow(imRectangles), title(['Matricula delimitda ', num2str(k)]);
+            %figure, imshow(imRectangles), title(['Matricula delimitda ', num2str(k)]);
             nRectangles = size(rectangles);
             for j = 2:nRectangles(1)
                 xmin = ceil(rectangles(j,1));
                 ymin = ceil(rectangles(j,2));
                 xmax =  rectangles(j,3) + xmin;
                 ymax = rectangles(j,4) + ymin;
-                area = (xmax-xmin) * (ymax - ymin);
-            
-                if (area > 80)
+                width = (xmax-xmin);
+                height = (ymax - ymin);
+                area = width * height;
+                if (area > 80 && height < 35 && width < 30)
                     Image =etiq((ymin-2):(ymax+2),(xmin-2):(xmax+2));
-                    %figure,imshow(Image), title(['Regio ', num2str(j)]);
                     Image = imbinarize(Image);
-                    Image = padarray(Image,[10 10],0,'both');
-                    platePoints=detectSIFTFeatures(Image, Sigma=0.8);
-                    figure, imshow(Image)
-                    title(['KP Regio ', num2str(j)]);
-                    hold on;
-                    plot(selectStrongest(platePoints, 100));
-                    [plateFeat, platePoints] = extractHOGFeatures(Image, platePoints);
-                    
-                    pairs = matchFeatures(plateFeat, charsFeat, 'MatchThreshold', 20, MaxRatio=0.75);
-                    m_kp_plate = platePoints(pairs(:,1), :);
-                    m_kp_char = charsPoints(pairs(:,2), :);
-                    
-                    figure;
-                    showMatchedFeatures(Image, chars, m_kp_plate, m_kp_char, 'montage');
-                    title('Aparellaments putatius');        
+                    Image = ~Image;
+                    %ee = strel('disk', 1);
+                    %Image = imclose(Image, ee);
+                    resIm = imresize(Image,[60 30]);
+                    figure, imshow(resIm);
+                    %title(['Regio ', num2str(j)]);
+                    ax = gca;
+                    % Requires R2020a or later
+                    filename = num2str(imgNumb);
+                    dir = 'results\';
+                    filename = strcat(dir, filename);
+                    filename = strcat(filename, '.jpg');
+                    exportgraphics(ax,filename) ;
+                    imgNumb = imgNumb + 1 ;
                 end
             end
         end
