@@ -1,7 +1,7 @@
 % Eliminem moltes matricules fals positives que hem detectat
 % en el pas anterior
 
-function immat = F_EliminarNoMatricules(imor,immator)
+function [immat, regions] = F_EliminarNoMatricules(imor,immator)
     [n, m] = size(immator);
     immat = logical(zeros(n,m));
     

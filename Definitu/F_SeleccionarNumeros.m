@@ -48,8 +48,7 @@ function imnums = F_SeleccionarNumeros(imor,immat)
         
         % Treballem amb les regions
         [n2,m2] = size(reglletres);
-        reglletres2 = reglletres;
-        props=regionprops(bwconncomp(reglletres),'BoundingBox','PixelList','Solidity','Circularity');
+        props=regionprops(bwconncomp(reglletres),'BoundingBox','PixelList','Solidity','Circularity','Image');
         for j=1:numel(props)
             prop = props(j);
             pl = prop.PixelList;
@@ -73,17 +72,73 @@ function imnums = F_SeleccionarNumeros(imor,immat)
                 reglletres = F_PintaPixels(reglletres,pl,0);
                 continue;
             end
+    
+            % Eliminem els elements massa poc llargs
+            if H < n2/6 || H < 10 || W < 2
+                reglletres = F_PintaPixels(reglletres,pl,0);
+                continue;
+            end
 
             % Dividim els elements que no encaixen la proporció
             ratio = 0.9;
             if W/H > ratio && numel(props) < 8
                 reglletres(Y:Y+H,X+ceil(W/2)) = 0;
             end
-
-        end
         
-        X = boundingBox(1); Y = boundingBox(2);
-        W = boundingBox(3); H = boundingBox(4);
-        imnums(Y:Y+H, X:X+W) = reglletres;    
+            X = boundingBox(1); Y = boundingBox(2);
+            W = boundingBox(3); H = boundingBox(4);
+            imnums(Y:Y+H, X:X+W) = reglletres;  
+        end    
+     end
+
+     % Eliminem els components connexos aïllats
+     regunits = imclose(imnums, strel("rectangle",[1,30]));
+     regnoaillats = imerode(regunits,strel("rectangle",[1,50]));
+     regnoaillats = imreconstruct(regnoaillats,regunits);
+     imnums = regnoaillats .* imnums;
+       
+     Iprops=regionprops(bwconncomp(imnums),'BoundingBox','PixelList');
+     count = numel(Iprops);
+     nums_data = zeros(0,3);
+     for i=1:count
+         prop = Iprops(i);
+         pl = prop.PixelList;
+         X = ceil(prop.BoundingBox(1)); Y = ceil(prop.BoundingBox(2));
+         W = prop.BoundingBox(3); H = prop.BoundingBox(4);
+
+         % Eliminem els elements massa llargs
+         if W > 50
+            imnums = F_PintaPixels(imnums,pl,0);
+            continue;
+         end
+
+         nums_data(end+1,:) = [H+Y/2,X,i];
+     end
+
+     % Escollim els 7 possibles números amb menor diferència d'altura.
+     nums_data = sortrows(nums_data);
+
+     if (numel(nums_data(:,1)) > 7)
+         min_dist = intmax;
+         min_idx = intmax;
+
+         for i=1:numel(nums_data(:,1))-6
+             dist = 0;
+             for j=1:6
+                dist = dist + (nums_data(i+j,1) - nums_data(i,1));
+             end
+             if dist < min_dist
+                 min_idx = i;
+                 min_dist = dist;
+             end
+         end
+
+         for i=1:numel(nums_data(:,1))
+             if i < min_idx || i > min_idx+6
+               pl = Iprops(nums_data(i,3)).PixelList;
+               imnums = F_PintaPixels(imnums,pl,0);  
+             end
+         end
+         nums_data = nums_data(min_idx:min_idx+6);
      end
 end
