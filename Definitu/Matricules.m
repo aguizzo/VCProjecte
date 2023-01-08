@@ -73,7 +73,7 @@ end
 
 imgNumb = 1;
 for k=1:numcotxes
-    figure, imshow(im_nums{k});
+    figure, imshow(im_nums{k}), title(f(k).name);
     ax = gca;
     filename = num2str(imgNumb);
     dir = 'results\';
@@ -82,22 +82,22 @@ for k=1:numcotxes
     exportgraphics(ax,filename) ;
     imgNumb = imgNumb + 1 ;
     Iprops=regionprops(bwconncomp(im_nums{k}),'Image');
-    count = numel(Iprops);
-    for i=1:count
-     imNum = Iprops(i).Image;
-     [files, cols] = size(imNum);
-     area = files * cols;
-     if (area > 60 && files < 35 && cols < 25)
-        imNum = padarray(imNum,[3 3],0,'both');
-        figure, imshow(~imNum);
-        ax = gca;
-        filename = num2str(imgNumb);
-        filename = strcat(dir, filename);
-        filename = strcat(filename, '.jpg');
-        exportgraphics(ax,filename) ;
-        imgNumb = imgNumb + 1 ;
-     end
-    end
+     count = numel(Iprops);
+     for i=1:count
+      imNum = Iprops(i).Image;
+      [files, cols] = size(imNum);
+      area = files * cols;
+      %if (area > 60 && files < 35 && cols < 25)
+         imNum = padarray(imNum,[3 3],0,'both');
+         figure, imshow(~imNum);
+         ax = gca;
+         filename = num2str(imgNumb);
+         filename = strcat(dir, filename);
+         filename = strcat(filename, '.jpg');
+         exportgraphics(ax,filename) ;
+         imgNumb = imgNumb + 1 ;
+      %end
+     end 
 end
 
 % Exemples:

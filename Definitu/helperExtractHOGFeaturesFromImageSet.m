@@ -13,7 +13,7 @@ for j = 1:numImages
     % Apply pre-processing steps
     img = imbinarize(img);
     % Plate classifier
-    img = imresize(img,[50 25]);
+    img = imresize(img,[40 20]);
 
     features(j, :) = extractHOGFeatures(img,'CellSize',cellSize);
 end
