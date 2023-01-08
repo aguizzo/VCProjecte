@@ -71,33 +71,51 @@ for k=1:numcotxes
     im_nums{k}=F_SeleccionarNumeros(im_ors{k},im_mat2{k});
 end
 
-imgNumb = 1;
+%imgNumb = 1;
 for k=1:numcotxes
-    figure, imshow(im_nums{k}), title(f(k).name);
-    ax = gca;
-    filename = num2str(imgNumb);
-    dir = 'results\';
-    filename = strcat(dir, filename);
-    filename = strcat(filename, '.jpg');
-    exportgraphics(ax,filename) ;
-    imgNumb = imgNumb + 1 ;
+    
+%     ax = gca;
+%     filename = num2str(imgNumb);
+%     dir = 'results\';
+%     filename = strcat(dir, filename);
+%     filename = strcat(filename, '.jpg');
+%     exportgraphics(ax,filename) ;
+%     imgNumb = imgNumb + 1 ;
+    numberPlate = strings;
+    letterPlate = strings;
     Iprops=regionprops(bwconncomp(im_nums{k}),'Image');
-     count = numel(Iprops);
-     for i=1:count
-      imNum = Iprops(i).Image;
-      [files, cols] = size(imNum);
-      area = files * cols;
-      %if (area > 60 && files < 35 && cols < 25)
+    count = numel(Iprops);
+    for i=1:3
+        imNum = Iprops(i).Image;
+        imNum = padarray(imNum,[3 3],0,'both');
+        imNum = imresize(imNum,[40 20]);
+        imNum = ~imNum;
+        %figure, imshow(imNum);
+        hog_4x4 = extractHOGFeatures(imNum,'CellSize',[4 4]);
+        letPrediction = letterClassifier.predictFcn(hog_4x4);
+        letter = string(letPrediction);
+        letterPlate = strcat(letterPlate, letter);
+    end
+    for i=4:count
+         imNum = Iprops(i).Image;
          imNum = padarray(imNum,[3 3],0,'both');
-         figure, imshow(~imNum);
-         ax = gca;
-         filename = num2str(imgNumb);
-         filename = strcat(dir, filename);
-         filename = strcat(filename, '.jpg');
-         exportgraphics(ax,filename) ;
-         imgNumb = imgNumb + 1 ;
+         imNum = imresize(imNum,[40 20]);
+         imNum = ~imNum;
+         %figure, imshow(imNum);
+         hog_4x4 = extractHOGFeatures(imNum,'CellSize',[4 4]);
+         numPrediction = numberClassifier.predictFcn(hog_4x4);
+         number = string(numPrediction);
+         numberPlate = strcat(numberPlate, number);
+%          ax = gca;
+%          filename = num2str(imgNumb);
+%          filename = strcat(dir, filename);
+%          filename = strcat(filename, '.jpg');
+%          exportgraphics(ax,filename) ;
+%          imgNumb = imgNumb + 1 ;
       %end
-     end 
+     end
+     figure, imshow(im_ors{k}), title(f(k).name);
+     figure, imshow(im_nums{k}), title(strcat( letterPlate,numberPlate));
 end
 
 % Exemples:

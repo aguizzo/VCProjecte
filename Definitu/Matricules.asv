@@ -3,7 +3,8 @@
 close all; clc
 w = warning ('off','all');
 
-f=dir(['cars' '/*.jpg']);
+%f=dir(['cars' '/*.jpg']);
+f=dir('*.jpg');
 files={f.name};
 numcotxes = numel(files);
 names = convertCharsToStrings(files);
@@ -32,7 +33,7 @@ for k=1:3
     imres(:,:,3) = imres(:,:,3) .* uint8(~immat2);
     imres(:,:,1) = imres(:,:,1) .* uint8(~immat2);
     imres(:,:,2) = imres(:,:,2) + uint8(immat2)*256;
-    figure, imshow(imres);
+    %figure, imshow(imres);
 end
 
 %% Eliminem no-matricules
@@ -58,7 +59,7 @@ for k=1:3
     imres(:,:,1) = imres(:,:,1) .* uint8(~immat2);
     imres(:,:,2) = imres(:,:,2) + uint8(immat2)*256;
 
-    figure, imshow(imres);
+    %figure, imshow(imres);
 end
 
 %% Seleccionem Números
@@ -70,6 +71,45 @@ for k=1:numcotxes
     im_nums{k}=F_SeleccionarNumeros(im_ors{k},im_mat2{k});
 end
 
+imgNumb = 1;
+for k=1:numcotxes
+    
+%     ax = gca;
+%     filename = num2str(imgNumb);
+%     dir = 'results\';
+%     filename = strcat(dir, filename);
+%     filename = strcat(filename, '.jpg');
+%     exportgraphics(ax,filename) ;
+%     imgNumb = imgNumb + 1 ;
+    numberPlate = strings;
+    letterPlate = strings;
+    Iprops=regionprops(bwconncomp(im_nums{k}),'Image');
+    count = numel(Iprops);
+    for i=1:3
+    
+    end
+    for i=4:count
+         imNum = Iprops(i).Image;
+         imNum = padarray(imNum,[3 3],0,'both');
+         imNum = imresize(imNum,[40 20]);
+         imNum = ~imNum;
+         figure, imshow(imNum);
+         hog_4x4 = extractHOGFeatures(imNum,'CellSize',[4 4]);
+         numPrediction = numberClassifier.predictFcn(hog_4x4);
+         number = string(numPrediction);
+         numberPlate = strcat(numberPlate, number);
+%          ax = gca;
+%          filename = num2str(imgNumb);
+%          filename = strcat(dir, filename);
+%          filename = strcat(filename, '.jpg');
+%          exportgraphics(ax,filename) ;
+%          imgNumb = imgNumb + 1 ;
+      %end
+     end
+     figure, imshow(im_ors{k}), title(f(k).name);
+     figure, imshow(im_nums{k}), title(numberPlate);
+end
+
 % Exemples:
 for k=1:numcotxes
     imres = im_ors{k};
@@ -77,5 +117,5 @@ for k=1:numcotxes
     imres(:,:,2) = imres(:,:,2) .* uint8(~immat2);
     imres(:,:,1) = imres(:,:,1) .* uint8(~immat2);
     imres(:,:,3) = imres(:,:,3) + uint8(immat2)*256;
-    figure, imshow(imres);
+    %figure, imshow(imres);
 end
