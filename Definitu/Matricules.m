@@ -3,7 +3,8 @@
 close all; clc
 w = warning ('off','all');
 
-f=dir(['cars' '/*.jpg']);
+%f=dir(['cars' '/*.jpg']);
+f=dir('*.jpg');
 files={f.name};
 numcotxes = numel(files);
 names = convertCharsToStrings(files);
@@ -32,7 +33,7 @@ for k=1:3
     imres(:,:,3) = imres(:,:,3) .* uint8(~immat2);
     imres(:,:,1) = imres(:,:,1) .* uint8(~immat2);
     imres(:,:,2) = imres(:,:,2) + uint8(immat2)*256;
-    figure, imshow(imres);
+    %figure, imshow(imres);
 end
 
 %% Eliminem no-matricules
@@ -58,7 +59,7 @@ for k=1:3
     imres(:,:,1) = imres(:,:,1) .* uint8(~immat2);
     imres(:,:,2) = imres(:,:,2) + uint8(immat2)*256;
 
-    figure, imshow(imres);
+    %figure, imshow(imres);
 end
 
 %% Seleccionem Números
@@ -70,6 +71,35 @@ for k=1:numcotxes
     im_nums{k}=F_SeleccionarNumeros(im_ors{k},im_mat2{k});
 end
 
+imgNumb = 1;
+for k=1:numcotxes
+    figure, imshow(im_nums{k});
+    ax = gca;
+    filename = num2str(imgNumb);
+    dir = 'results\';
+    filename = strcat(dir, filename);
+    filename = strcat(filename, '.jpg');
+    exportgraphics(ax,filename) ;
+    imgNumb = imgNumb + 1 ;
+    Iprops=regionprops(bwconncomp(im_nums{k}),'Image');
+    count = numel(Iprops);
+    for i=1:count
+     imNum = Iprops(i).Image;
+     [files, cols] = size(imNum);
+     area = files * cols;
+     if (area > 60 && files < 35 && cols < 25)
+        imNum = padarray(imNum,[3 3],0,'both');
+        figure, imshow(~imNum);
+        ax = gca;
+        filename = num2str(imgNumb);
+        filename = strcat(dir, filename);
+        filename = strcat(filename, '.jpg');
+        exportgraphics(ax,filename) ;
+        imgNumb = imgNumb + 1 ;
+     end
+    end
+end
+
 % Exemples:
 for k=1:numcotxes
     imres = im_ors{k};
@@ -77,5 +107,5 @@ for k=1:numcotxes
     imres(:,:,2) = imres(:,:,2) .* uint8(~immat2);
     imres(:,:,1) = imres(:,:,1) .* uint8(~immat2);
     imres(:,:,3) = imres(:,:,3) + uint8(immat2)*256;
-    figure, imshow(imres);
+    %figure, imshow(imres);
 end
