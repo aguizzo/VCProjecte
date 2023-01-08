@@ -1,9 +1,14 @@
-trainingSet = imageDatastore("datasets\test\" ,'IncludeSubfolders',true,'LabelSource','foldernames');
+%% Training Data
+lettersTrainingSet = imageDatastore("datasets\training1\letters\" ,'IncludeSubfolders',true,'LabelSource','foldernames');
+%countEachLabel(lettersTrainingSet);
+numbersTrainingSet = imageDatastore("datasets\training1\numbers\" ,'IncludeSubfolders',true,'LabelSource','foldernames');
 
-countEachLabel(trainingSet);
+%% Test Data
+lettersTestSet = imageDatastore("datasets\test1\letters\" ,'IncludeSubfolders',true,'LabelSource','foldernames');
+numbersTestSet = imageDatastore("datasets\test1\numbers\" ,'IncludeSubfolders',true,'LabelSource','foldernames');
 
 %% 
-img = readimage(trainingSet, 100);
+img = readimage(lettersTrainingSet, 100);
 img = im2gray(img);
 img = imbinarize(img);
 img = imresize(img,[40 20]);
@@ -29,8 +34,15 @@ title({'CellSize = [4 4]'; ['Length = ' num2str(length(hog_4x4))]});
 subplot(2,3,6);
 plot(vis8x8); 
 title({'CellSize = [8 8]'; ['Length = ' num2str(length(hog_8x8))]});
-%%
+
 cellSize = [2 2];
 hogFeatureSize = length(hog_2x2);
+%% Trainining Features
 
-[trainingFeatures, trainingLabels] = helperExtractHOGFeaturesFromImageSet(trainingSet, hogFeatureSize, cellSize);
+[letterTrainingFeatures, letterTrainingLabels] = helperExtractHOGFeaturesFromImageSet(lettersTrainingSet, hogFeatureSize, cellSize);
+[numbersTrainingFeatures, numbersTrainingLabels] = helperExtractHOGFeaturesFromImageSet(numbersTrainingSet, hogFeatureSize, cellSize);
+
+%% Test Features
+
+[letterTestFeatures, letterTrainingLabels] = helperExtractHOGFeaturesFromImageSet(lettersTrainingSet, hogFeatureSize, cellSize);
+[numbersTestFeatures, numbersTrainingLabels] = helperExtractHOGFeaturesFromImageSet(numbersTrainingSet, hogFeatureSize, cellSize);
